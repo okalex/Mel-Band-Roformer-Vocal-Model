@@ -14,6 +14,9 @@ def handler(job):
   file_name = job["input"]["file_name"]
   num_overlap = job["input"]["num_overlap"]
 
+  os.mkdir(input_folder)
+  os.mkdir(store_dir)
+
   firebase_key = os.environ.get('FIREBASE_SECRET')
   print('firebase_key')
   print(firebase_key)

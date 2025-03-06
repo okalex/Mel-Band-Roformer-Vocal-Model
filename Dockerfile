@@ -1,6 +1,5 @@
-FROM pytorch/pytorch:latest
+FROM pytorch/pytorch:latest AS base
 
-# Install dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
   build-essential \
   cmake \
@@ -9,19 +8,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   python3-dev \
   && rm -rf /var/lib/apt/lists/*
 
-# Set up environment variables (optional)
 ENV TORCH_CUDA_ARCH_LIST="Pascal;Volta;Turing;Ampere"
 ENV PATH="/opt/conda/bin:${PATH}"
 
-# Copy project files (optional)
+FROM base AS downloader
 COPY . /app
 COPY ./configs/config_vocals_mel_band_roformer.yaml /tmp/config_vocals_mel_band_roformer.yaml
 ADD https://huggingface.co/KimberleyJSN/melbandroformer/resolve/main/MelBandRoformer.ckpt?download=true /tmp/MelBandRoformer.ckpt
 
+FROM downloader AS installer
 WORKDIR /app
-
-# Install Python packages (optional)
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Command to run on container start
+FROM installer AS final
 CMD ["python3", "-u", "rp_inference.py"]
