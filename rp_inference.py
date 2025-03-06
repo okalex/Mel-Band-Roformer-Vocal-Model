@@ -18,14 +18,8 @@ def handler(job):
   os.mkdir(input_folder)
   os.mkdir(store_dir)
 
-  file_without_extension = Path(file_name).stem
-
   firebase_key = os.environ.get('FIREBASE_SECRET')
-  print('firebase_key')
-  print(firebase_key)
   firebase_key_file = '/tmp/firebase-key.json'
-  print('firebase_key_file')
-  print(firebase_key_file)
   with open(firebase_key_file, 'w', encoding="utf-8") as output_file:
     output_file.write(firebase_key)
   
@@ -40,6 +34,7 @@ def handler(job):
 
   run_model("mel_band_roformer", config_path, model_path, input_folder, store_dir, 0, num_overlap)
 
+  file_without_extension = Path(file_name).stem
   vocal_file = file_without_extension + '_vocals.wav'
   instrumental_file = file_without_extension + '_instrumental.wav'
   bucket.blob(vocal_file).upload_from_filename('/tmp/out/orig_vocals.wav')
