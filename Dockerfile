@@ -6,7 +6,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   cmake \
   git \
   wget \
-  vim \
   python3-dev \
   && rm -rf /var/lib/apt/lists/*
 
