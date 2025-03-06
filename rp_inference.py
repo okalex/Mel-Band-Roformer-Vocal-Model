@@ -1,6 +1,7 @@
 import runpod
 import json
 import os
+from pathlib import Path
 import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import storage
@@ -16,6 +17,8 @@ def handler(job):
 
   os.mkdir(input_folder)
   os.mkdir(store_dir)
+
+  file_without_extension = Path(file_name).stem
 
   firebase_key = os.environ.get('FIREBASE_SECRET')
   print('firebase_key')
@@ -37,9 +40,11 @@ def handler(job):
 
   run_model("mel_band_roformer", config_path, model_path, input_folder, store_dir, 0, num_overlap)
 
-  bucket.blob('orig_vocals.wav').upload_from_filename('/tmp/out/orig_vocals.wav')
-  bucket.blob('orig_instrumental.wav').upload_from_filename('/tmp/out/orig_instrumental.wav')
+  vocal_file = file_without_extension + '_vocals.wav'
+  instrumental_file = file_without_extension + '_instrumental.wav'
+  bucket.blob(vocal_file).upload_from_filename('/tmp/out/orig_vocals.wav')
+  bucket.blob(instrumental_file).upload_from_filename('/tmp/out/orig_instrumental.wav')
 
-  return json.dumps({"vocals": "orig_vocals.wav", "instrumental": "orig_instrumental.wav"})
+  return json.dumps({"vocals": vocal_file, "instrumental": instrumental_file})
 
 runpod.serverless.start({"handler": handler})
