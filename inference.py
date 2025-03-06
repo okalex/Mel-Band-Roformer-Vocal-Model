@@ -17,10 +17,10 @@ import warnings
 warnings.filterwarnings("ignore")
 
 
-def run_folder(model, args, config, device, verbose=False):
+def run_folder(model, model_type, config_path, model_path, input_folder, store_dir, device_ids, num_overlap, config, device, verbose=False):
     start_time = time.time()
     model.eval()
-    all_mixtures_path = glob.glob(args.input_folder + '/*.wav')
+    all_mixtures_path = glob.glob(input_folder + '/*.wav')
     total_tracks = len(all_mixtures_path)
     print('Total tracks found: {}'.format(total_tracks))
 
@@ -28,17 +28,16 @@ def run_folder(model, args, config, device, verbose=False):
     if config.training.target_instrument is not None:
         instruments = [config.training.target_instrument]
 
-    if not os.path.isdir(args.store_dir):
-        os.mkdir(args.store_dir)
+    if not os.path.isdir(store_dir):
+        os.mkdir(store_dir)
 
     if not verbose:
         all_mixtures_path = tqdm(all_mixtures_path)
 
     first_chunk_time = None
-
-    num_overlap = config.inference.num_overlap
-    if args.num_overlap is not None:
-        num_overlap = args.num_overlap
+    
+    if num_overlap is None:
+        num_overlap = config.inference.num_overlap
 
     for track_number, path in enumerate(all_mixtures_path, 1):
         print(f"\nProcessing track {track_number}/{total_tracks}: {os.path.basename(path)}")
@@ -67,7 +66,7 @@ def run_folder(model, args, config, device, verbose=False):
             if original_mono:
                 vocals_output = vocals_output[:, 0]
 
-            vocals_path = "{}/{}_{}.wav".format(args.store_dir, os.path.basename(path)[:-4], instr)
+            vocals_path = "{}/{}_{}.wav".format(store_dir, os.path.basename(path)[:-4], instr)
             sf.write(vocals_path, vocals_output, sr, subtype='FLOAT')
 
         vocals_output = res[instruments[0]].T
@@ -77,41 +76,27 @@ def run_folder(model, args, config, device, verbose=False):
         original_mix, _ = sf.read(path)
         instrumental = original_mix - vocals_output
 
-        instrumental_path = "{}/{}_instrumental.wav".format(args.store_dir, os.path.basename(path)[:-4])
+        instrumental_path = "{}/{}_instrumental.wav".format(store_dir, os.path.basename(path)[:-4])
         sf.write(instrumental_path, instrumental, sr, subtype='FLOAT')
 
     time.sleep(1)
     print("Elapsed time: {:.2f} sec".format(time.time() - start_time))
 
 
-def proc_folder(args):
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--model_type", type=str, default='mel_band_roformer')
-    parser.add_argument("--config_path", type=str, help="path to config yaml file")
-    parser.add_argument("--model_path", type=str, default='', help="Location of the model")
-    parser.add_argument("--input_folder", type=str, help="folder with songs to process")
-    parser.add_argument("--store_dir", default="", type=str, help="path to store model outputs")
-    parser.add_argument("--device_ids", nargs='+', type=int, default=0, help='list of gpu ids')
-    parser.add_argument("--num_overlap", type=int, default=None, help='Number of overlapping chunks')
-    if args is None:
-        args = parser.parse_args()
-    else:
-        args = parser.parse_args(args)
-
+def run_model(model_type, config_path, model_path, input_folder, store_dir, device_ids, num_overlap):
     torch.backends.cudnn.benchmark = True
 
-    with open(args.config_path) as f:
+    with open(config_path) as f:
       config = ConfigDict(yaml.load(f, Loader=yaml.FullLoader))
 
-    model = get_model_from_config(args.model_type, config)
-    if args.model_path != '':
-        print('Using model: {}'.format(args.model_path))
+    model = get_model_from_config(model_type, config)
+    if model_path != '':
+        print('Using model: {}'.format(model_path))
         model.load_state_dict(
-            torch.load(args.model_path, map_location=torch.device('cpu'))
+            torch.load(model_path, map_location=torch.device('cpu'))
         )
 
     if torch.cuda.is_available():
-        device_ids = args.device_ids
         if type(device_ids)==int:
             device = torch.device(f'cuda:{device_ids}')
             model = model.to(device)
@@ -127,7 +112,23 @@ def proc_folder(args):
         print('CUDA is not available. Run inference on CPU. It will be very slow...')
         model = model.to(device)
 
-    run_folder(model, args, config, device, verbose=False)
+    run_folder(model, model_type, config_path, model_path, input_folder, store_dir, device_ids, num_overlap, config, device, verbose=False)
+
+
+def proc_folder(args):
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--model_type", type=str, default='mel_band_roformer')
+    parser.add_argument("--config_path", type=str, help="path to config yaml file")
+    parser.add_argument("--model_path", type=str, default='', help="Location of the model")
+    parser.add_argument("--input_folder", type=str, help="folder with songs to process")
+    parser.add_argument("--store_dir", default="", type=str, help="path to store model outputs")
+    parser.add_argument("--device_ids", nargs='+', type=int, default=0, help='list of gpu ids')
+    parser.add_argument("--num_overlap", type=int, default=None, help='Number of overlapping chunks')
+    if args is None:
+        args = parser.parse_args()
+    else:
+        args = parser.parse_args(args)
+    run_model(args.model_type, args.config_path, args.model_path, args.input_folder, args.store_dir, args.device_ids, args.num_overlap)
 
 
 if __name__ == "__main__":
