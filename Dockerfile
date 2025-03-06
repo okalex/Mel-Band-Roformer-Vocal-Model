@@ -16,9 +16,7 @@ ENV PATH="/opt/conda/bin:${PATH}"
 
 # Copy project files (optional)
 COPY . /app
-
-ADD https://huggingface.co/KimberleyJSN/melbandroformer/resolve/main/MelBandRoformer.ckpt?download=true /tmp
-COPY /tmp/MelBandRoformer.ckpt /app/MelBandRoformer.ckpt
+ADD https://huggingface.co/KimberleyJSN/melbandroformer/resolve/main/MelBandRoformer.ckpt?download=true /app/MelBandRoformer.ckpt
 
 WORKDIR /app
 
