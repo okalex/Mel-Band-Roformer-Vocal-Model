@@ -1,6 +1,7 @@
 venv/
 .DS_Store
 test_input.json
+build_base
 scripts/
 tmp/
 firebase/
