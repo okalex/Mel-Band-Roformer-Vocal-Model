@@ -4,6 +4,11 @@ import torch
 import sys
 import torch.nn as nn
 
+def output(message):
+    print(message)
+    sys.stdout.flush()
+    yield message
+
 
 def get_model_from_config(model_type, config):
     if model_type == 'mel_band_roformer':
@@ -88,16 +93,14 @@ def demix_track(config, model, mix, device, num_overlap, first_chunk_time=None):
                     chunk_time = time.time() - chunk_start_time
                     first_chunk_time = chunk_time
                     estimated_total_time = chunk_time * num_chunks
-                    print(f"Estimated total processing time for this track: {estimated_total_time:.2f} seconds")
+                    yield from output(f"Estimated total processing time for this track: {estimated_total_time:.2f} seconds")
                     first_chunk = False
 
                 if first_chunk_time is not None and i > step:
                     chunks_processed = i // step
                     time_remaining = first_chunk_time * (num_chunks - chunks_processed)
-                    sys.stdout.write(f"\rEstimated time remaining: {time_remaining:.2f} seconds")
-                    sys.stdout.flush()
+                    yield from output(f"\rEstimated time remaining: {time_remaining:.2f} seconds")
 
-            print()
             estimated_sources = result / counter
             estimated_sources = estimated_sources.cpu().numpy()
             np.nan_to_num(estimated_sources, copy=False, nan=0.0)

@@ -11,15 +11,12 @@ import glob
 import torch
 import soundfile as sf
 import torch.nn as nn
-from utils import demix_track, get_model_from_config
+from utils import demix_track, get_model_from_config, output
 
 import warnings
 warnings.filterwarnings("ignore")
 
-def output(message):
-    print(message)
-    sys.stdout.flush()
-    yield message
+
 
 def run_folder(model, model_type, config_path, model_path, input_folder, store_dir, device_ids, num_overlap, config, device, verbose=False):
     start_time = time.time()
@@ -62,7 +59,7 @@ def run_folder(model, model_type, config_path, model_path, input_folder, store_d
             yield from output(f"Estimated total processing time for this track: {estimated_total_time:.2f} seconds")
             yield from output(f"Estimated time remaining: {estimated_total_time:.2f} seconds\r")
 
-        res, first_chunk_time = demix_track(config, model, mixture, device, num_overlap, first_chunk_time)
+        res, first_chunk_time = yield from demix_track(config, model, mixture, device, num_overlap, first_chunk_time)
 
         for instr in instruments:
             vocals_output = res[instr].T
