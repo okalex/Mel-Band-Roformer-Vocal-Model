@@ -1,0 +1,20 @@
+FROM pytorch/pytorch:latest AS base
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+  build-essential \
+  cmake \
+  git \
+  wget \
+  python3-dev \
+  && rm -rf /var/lib/apt/lists/*
+
+ENV TORCH_CUDA_ARCH_LIST="Pascal;Volta;Turing;Ampere"
+ENV PATH="/opt/conda/bin:${PATH}"
+
+FROM base AS downloader
+ADD https://huggingface.co/KimberleyJSN/melbandroformer/resolve/main/MelBandRoformer.ckpt?download=true /tmp/MelBandRoformer.ckpt
+
+FROM downloader AS installer
+WORKDIR /app
+COPY ./requirements.txt /app
+RUN pip install --no-cache-dir -r requirements.txt
