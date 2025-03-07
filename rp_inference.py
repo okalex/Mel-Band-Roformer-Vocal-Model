@@ -32,7 +32,8 @@ def handler(job):
   blob = bucket.blob(file_name)
   blob.download_to_filename('/tmp/in/orig.wav')
 
-  run_model("mel_band_roformer", config_path, model_path, input_folder, store_dir, 0, num_overlap)
+  for message in run_model("mel_band_roformer", config_path, model_path, input_folder, store_dir, 0, num_overlap):
+    yield message
 
   file_without_extension = Path(file_name).stem
   vocal_file = file_without_extension + '_vocals.wav'
@@ -40,7 +41,7 @@ def handler(job):
   bucket.blob(vocal_file).upload_from_filename('/tmp/out/orig_vocals.wav')
   bucket.blob(instrumental_file).upload_from_filename('/tmp/out/orig_instrumental.wav')
 
-  return json.dumps({"vocals": vocal_file, "instrumental": instrumental_file})
+  yield json.dumps({"vocals": vocal_file, "instrumental": instrumental_file})
 
 runpod.serverless.start({
   "handler": handler,

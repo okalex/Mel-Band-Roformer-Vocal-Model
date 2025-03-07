@@ -20,7 +20,7 @@ warnings.filterwarnings("ignore")
 def output(message):
     print(message)
     sys.stdout.flush()
-    runpod.serverless.stream({"message": message})
+    yield message
 
 def run_folder(model, model_type, config_path, model_path, input_folder, store_dir, device_ids, num_overlap, config, device, verbose=False):
     start_time = time.time()
@@ -117,7 +117,7 @@ def run_model(model_type, config_path, model_path, input_folder, store_dir, devi
         output('CUDA is not available. Run inference on CPU. It will be very slow...')
         model = model.to(device)
 
-    run_folder(model, model_type, config_path, model_path, input_folder, store_dir, device_ids, num_overlap, config, device, verbose=False)
+    yield from run_folder(model, model_type, config_path, model_path, input_folder, store_dir, device_ids, num_overlap, config, device, verbose=False)
 
 
 def proc_folder(args):
