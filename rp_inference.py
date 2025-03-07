@@ -7,6 +7,8 @@ from firebase_admin import credentials
 from firebase_admin import storage
 from inference import run_model
 
+# Test build
+
 def handler(job):
   config_path = "/tmp/config_vocals_mel_band_roformer.yaml"
   model_path = "/tmp/MelBandRoformer.ckpt"
