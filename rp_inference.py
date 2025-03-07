@@ -42,4 +42,7 @@ def handler(job):
 
   return json.dumps({"vocals": vocal_file, "instrumental": instrumental_file})
 
-runpod.serverless.start({"handler": handler})
+runpod.serverless.start({
+  "handler": handler,
+  "return_aggregate_stream": True,
+})
