@@ -12,11 +12,11 @@ ENV TORCH_CUDA_ARCH_LIST="Pascal;Volta;Turing;Ampere"
 ENV PATH="/opt/conda/bin:${PATH}"
 
 FROM base AS downloader
-COPY . /app
-COPY ./configs/config_vocals_mel_band_roformer.yaml /tmp/config_vocals_mel_band_roformer.yaml
 ADD https://huggingface.co/KimberleyJSN/melbandroformer/resolve/main/MelBandRoformer.ckpt?download=true /tmp/MelBandRoformer.ckpt
 
 FROM downloader AS installer
+COPY ./configs/config_vocals_mel_band_roformer.yaml /tmp/config_vocals_mel_band_roformer.yaml
+COPY . /app
 WORKDIR /app
 RUN pip install --no-cache-dir -r requirements.txt
 
