@@ -11,7 +11,6 @@ import glob
 import torch
 import soundfile as sf
 import torch.nn as nn
-import runpod
 from utils import demix_track, get_model_from_config
 
 import warnings
@@ -27,7 +26,7 @@ def run_folder(model, model_type, config_path, model_path, input_folder, store_d
     model.eval()
     all_mixtures_path = glob.glob(input_folder + '/*.wav')
     total_tracks = len(all_mixtures_path)
-    output('Total tracks found: {}'.format(total_tracks))
+    yield from output('Total tracks found: {}'.format(total_tracks))
 
     instruments = config.training.instruments
     if config.training.target_instrument is not None:
@@ -45,7 +44,7 @@ def run_folder(model, model_type, config_path, model_path, input_folder, store_d
         num_overlap = config.inference.num_overlap
 
     for track_number, path in enumerate(all_mixtures_path, 1):
-        output(f"\nProcessing track {track_number}/{total_tracks}: {os.path.basename(path)}")
+        yield from output(f"\nProcessing track {track_number}/{total_tracks}: {os.path.basename(path)}")
 
         mix, sr = sf.read(path)
         original_mono = False
@@ -60,8 +59,8 @@ def run_folder(model, model_type, config_path, model_path, input_folder, store_d
 
             num_chunks = (total_length + config.inference.chunk_size // num_overlap - 1) // (config.inference.chunk_size // num_overlap)
             estimated_total_time = first_chunk_time * num_chunks
-            output(f"Estimated total processing time for this track: {estimated_total_time:.2f} seconds")
-            output(f"Estimated time remaining: {estimated_total_time:.2f} seconds\r")
+            yield from output(f"Estimated total processing time for this track: {estimated_total_time:.2f} seconds")
+            yield from output(f"Estimated time remaining: {estimated_total_time:.2f} seconds\r")
 
         res, first_chunk_time = demix_track(config, model, mixture, device, num_overlap, first_chunk_time)
 
@@ -84,7 +83,7 @@ def run_folder(model, model_type, config_path, model_path, input_folder, store_d
         sf.write(instrumental_path, instrumental, sr, subtype='FLOAT')
 
     time.sleep(1)
-    output("Elapsed time: {:.2f} sec".format(time.time() - start_time))
+    yield from output("Elapsed time: {:.2f} sec".format(time.time() - start_time))
 
 
 def run_model(model_type, config_path, model_path, input_folder, store_dir, device_ids, num_overlap):
@@ -95,13 +94,13 @@ def run_model(model_type, config_path, model_path, input_folder, store_dir, devi
 
     model = get_model_from_config(model_type, config)
     if model_path != '':
-        print('Using model: {}'.format(model_path))
+        yield from output('Using model: {}'.format(model_path))
         model.load_state_dict(
             torch.load(model_path, map_location=torch.device('cpu'))
         )
 
     if torch.cuda.is_available():
-        output('Using CUDA')
+        yield from output('Using CUDA')
         if type(device_ids)==int:
             device = torch.device(f'cuda:{device_ids}')
             model = model.to(device)
@@ -109,12 +108,12 @@ def run_model(model_type, config_path, model_path, input_folder, store_dir, devi
             device = torch.device(f'cuda:{device_ids[0]}')
             model = nn.DataParallel(model, device_ids=device_ids).to(device)
     elif torch.mps.is_available():
-        output('Using MPS')
+        yield from output('Using MPS')
         device = 'mps'
         model = nn.DataParallel(model).to(device)
     else:
         device = 'cpu'
-        output('CUDA is not available. Run inference on CPU. It will be very slow...')
+        yield from output('CUDA is not available. Run inference on CPU. It will be very slow...')
         model = model.to(device)
 
     yield from run_folder(model, model_type, config_path, model_path, input_folder, store_dir, device_ids, num_overlap, config, device, verbose=False)
