@@ -28,10 +28,10 @@ def handler(job):
   
   cred = credentials.Certificate(firebase_key_file)
   firebase_admin.initialize_app(cred, {
-      'storageBucket': 'stemulator-4606f.firebasestorage.app'
+      'storageBucket': bucket_url
   })
 
-  bucket = storage.bucket(bucket_url)
+  bucket = storage.bucket()
   blob = bucket.blob(file_name)
   blob.download_to_filename('/tmp/in/orig.wav')
 
