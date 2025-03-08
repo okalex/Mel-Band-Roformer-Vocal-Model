@@ -27,7 +27,7 @@ def handler(job):
   
   cred = credentials.Certificate(firebase_key_file)
   firebase_admin.initialize_app(cred, {
-      'storageBucket': 'stemulator-4606f.firebasestorage.app'
+      'storageBucket': 'gs://stemulator-uploads'
   })
 
   bucket = storage.bucket()
