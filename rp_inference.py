@@ -15,7 +15,7 @@ def handler(job):
   input_folder = "/tmp/in"
   store_dir = "/tmp/out"
   file_name = job["input"]["file_name"]
-  bucket_url = job["input"]["bucket_url"]
+  bucket_url = job["input"]["bucket_name"]
   num_overlap = job["input"]["num_overlap"]
 
   os.mkdir(input_folder)
