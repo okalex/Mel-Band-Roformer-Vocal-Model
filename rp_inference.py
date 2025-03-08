@@ -15,6 +15,7 @@ def handler(job):
   input_folder = "/tmp/in"
   store_dir = "/tmp/out"
   file_name = job["input"]["file_name"]
+  bucket_url = job["input"]["bucket_url"]
   num_overlap = job["input"]["num_overlap"]
 
   os.mkdir(input_folder)
@@ -27,7 +28,7 @@ def handler(job):
   
   cred = credentials.Certificate(firebase_key_file)
   firebase_admin.initialize_app(cred, {
-      'storageBucket': 'gs://stemulator-uploads'
+      'storageBucket': bucket_url
   })
 
   bucket = storage.bucket()
